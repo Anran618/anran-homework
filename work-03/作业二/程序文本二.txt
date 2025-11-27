@@ -1,0 +1,96 @@
+#include <TFT_eSPI.h>  // 引入Wio Terminal屏幕驱动库
+
+// 创建屏幕对象，用于控制屏幕显示
+TFT_eSPI tft = TFT_eSPI();
+
+// 定义防抖相关变量，防止按钮误触
+const int debounceDelay = 50;    // 防抖延时50ms，确保按键稳定后再响应
+bool aKeyPressed = false;        // 标记A键是否已按下
+bool bKeyPressed = false;        // 标记B键是否已按下
+bool cKeyPressed = false;        // 标记C键是否已按下
+
+void setup() { 
+  Serial.begin(115200);          // 初始化串口通信，波特率115200，用于调试输出
+  
+  // 设置按钮引脚为上拉输入模式（保留原始WIO_KEY_A定义，不做修改）
+  pinMode(WIO_KEY_A, INPUT_PULLUP); 
+  pinMode(WIO_KEY_B, INPUT_PULLUP); 
+  pinMode(WIO_KEY_C, INPUT_PULLUP);
+  
+  // 初始化屏幕
+  tft.init();                    // 初始化屏幕驱动
+  tft.setRotation(3);            // 设置屏幕旋转方向（3为横屏显示，适配Wio Terminal）
+  tft.fillScreen(TFT_BLACK);     // 开机后屏幕填充为黑色，实现黑屏效果
+}
+
+void loop() {
+  // 检测A键状态（防误触处理）
+  if (digitalRead(WIO_KEY_A) == LOW && !aKeyPressed) {
+    delay(debounceDelay);        // 防抖延时，等待按键状态稳定
+    if (digitalRead(WIO_KEY_A) == LOW) {  // 再次确认A键确实被按下
+      drawCircle();              // 调用绘制圆形的函数
+      aKeyPressed = true;        // 标记A键已按下，防止重复触发
+      Serial.println("A Key pressed - 显示圆形");
+    }
+  } else if (digitalRead(WIO_KEY_A) == HIGH) {
+    aKeyPressed = false;         // A键松开后，重置标记
+  }
+  
+  // 检测B键状态（防误触处理）
+  if (digitalRead(WIO_KEY_B) == LOW && !bKeyPressed) {
+    delay(debounceDelay);        // 防抖延时
+    if (digitalRead(WIO_KEY_B) == LOW) {  // 确认B键按下
+      drawSquare();              // 调用绘制方形的函数
+      bKeyPressed = true;        // 标记B键已按下
+      Serial.println("B Key pressed - 显示方形");
+    }
+  } else if (digitalRead(WIO_KEY_B) == HIGH) {
+    bKeyPressed = false;         // B键松开后重置标记
+  }
+  
+  // 检测C键状态（防误触处理）
+  if (digitalRead(WIO_KEY_C) == LOW && !cKeyPressed) {
+    delay(debounceDelay);        // 防抖延时
+    if (digitalRead(WIO_KEY_C) == LOW) {  // 确认C键按下
+      drawTriangle();            // 调用绘制三角形的函数
+      cKeyPressed = true;        // 标记C键已按下
+      Serial.println("C Key pressed - 显示三角形");
+    }
+  } else if (digitalRead(WIO_KEY_C) == HIGH) {
+    cKeyPressed = false;         // C键松开后重置标记
+  }
+  
+  delay(10);  // 主循环小延时，降低CPU占用
+}
+
+// 绘制圆形的函数
+void drawCircle() {
+  tft.fillScreen(TFT_BLACK);                // 先清屏为黑色
+  tft.drawCircle(160, 120, 80, TFT_RED);    // 绘制圆形轮廓：中心(160,120)，半径80，红色
+  tft.fillCircle(160, 120, 78, TFT_ORANGE); // 填充圆形内部：稍小半径，橙色
+  tft.setTextColor(TFT_WHITE);              // 设置文字颜色为白色
+  tft.setTextSize(2);                       // 设置文字大小
+  tft.drawCentreString("圆形", 160, 110, 1); // 居中显示文字“圆形”
+}
+
+// 绘制方形的函数
+void drawSquare() {
+  tft.fillScreen(TFT_BLACK);                // 清屏为黑色
+  tft.drawRect(80, 40, 160, 160, TFT_BLUE); // 绘制方形轮廓：左上角(80,40)，宽160，高160，蓝色
+  tft.fillRect(82, 42, 156, 156, TFT_CYAN); // 填充方形内部：偏移2像素，青色
+  tft.setTextColor(TFT_WHITE);              // 设置文字颜色为白色
+  tft.setTextSize(2);                       // 设置文字大小
+  tft.drawCentreString("方形", 160, 110, 1); // 居中显示文字“方形”
+}
+
+// 绘制三角形的函数
+void drawTriangle() {
+  tft.fillScreen(TFT_BLACK);                      // 清屏为黑色
+  // 绘制三角形轮廓：顶点(160,40)、(80,200)、(240,200)，绿色
+  tft.drawTriangle(160, 40, 80, 200, 240, 200, TFT_GREEN);
+  // 填充三角形内部：顶点偏移2像素，浅绿色
+  tft.fillTriangle(160, 42, 82, 198, 238, 198, TFT_LIGHTGREY);
+  tft.setTextColor(TFT_WHITE);                    // 设置文字颜色为白色
+  tft.setTextSize(2);                             // 设置文字大小
+  tft.drawCentreString("三角形", 160, 110, 1);    // 居中显示文字“三角形”
+}
